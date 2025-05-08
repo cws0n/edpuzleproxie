@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Edpuzzle Bookmarklet Runner</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    #container { display: flex; height: 90vh; }
+    #controls { width: 300px; padding-right: 20px; }
+    #frame-container { flex-grow: 1; }
+    textarea { 
+      width: 100%; 
+      height: 200px; 
+      font-family: monospace;
+      margin-bottom: 10px;
+    }
+    iframe { 
+      width: 100%; 
+      height: 100%; 
+      border: 1px solid #ccc; 
+    }
+    button {
+      padding: 8px 15px;
+      background: #4285f4;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <h1>Edpuzzle Bookmarklet Runner</h1>
+  <div id="container">
+    <div id="controls">
+      <h3>Your Bookmarklets:</h3>
+      <textarea id="bookmarklet" placeholder="Paste javascript: bookmarklet here..."></textarea>
+      <button onclick="runBookmarklet()">Execute</button>
+      
+      <h3>Saved Bookmarklets:</h3>
+      <div id="saved"></div>
+    </div>
+    
+    <div id="frame-container">
+      <iframe id="edpuzzle" src="/edpuzzle"></iframe>
+    </div>
+  </div>
+
+  <script>
+    // Run bookmarklet in proxy context
+    function runBookmarklet() {
+      const code = document.getElementById('bookmarklet').value.trim();
+      if (!code) return alert('Please enter a bookmarklet');
+      
+      const popup = window.open('/execute?code=' + encodeURIComponent(code), '_blank', 'width=100,height=100');
+      setTimeout(() => popup.close(), 1000);
+      
+      // Refocus Edpuzzle iframe
+      document.getElementById('edpuzzle').focus();
+    }
+
+    // Load saved bookmarklets from localStorage
+    function loadSaved() {
+      const saved = JSON.parse(localStorage.getItem('edpuzzle_bookmarklets') || '[]');
+      const container = document.getElementById('saved');
+      container.innerHTML = '';
+      
+      saved.forEach((item, i) => {
+        const div = document.createElement('div');
+        div.innerHTML = `
+          <button onclick="runSaved(${i})">Run</button>
+          ${item.name}
+          <button onclick="removeSaved(${i})">×</button>
+        `;
+        container.appendChild(div);
+      });
+    }
+    
+    function runSaved(index) {
+      const saved = JSON.parse(localStorage.getItem('edpuzzle_bookmarklets') || '[]');
+      document.getElementById('bookmarklet').value = saved[index].code;
+      runBookmarklet();
+    }
+    
+    function removeSaved(index) {
+      const saved = JSON.parse(localStorage.getItem('edpuzzle_bookmarklets') || '[]');
+      saved.splice(index, 1);
+      localStorage.setItem('edpuzzle_bookmarklets', JSON.stringify(saved));
+      loadSaved();
+    }
+    
+    // Initialize
+    loadSaved();
+  </script>
+</body>
+</html>
